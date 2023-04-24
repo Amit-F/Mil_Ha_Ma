@@ -1,14 +1,15 @@
 # to-do:
-# 1. fix "1 points" bug
-# 2. find a way to make the game end when 1 player reaches 0 cards
-# 3. make code more efficient (loop all appends + removes)
-    # a. use list comprehensions!
-# 4. for multiplayer, make for loop that adds empty lists to master list and work on indices
-# 5. in order for mp to work, need to loop player names
-    # a. mp logic would need to include double/triple/etc milhamot, so probably not realistic
-#        to pursue at this point in time
+# 1. fix "1 points" bug --> fix could potentially add hundreds of loops per game... worth it?
+# 2. find a way to make the game end when 1 player reaches 0 cards --> done
+# 3. make code more efficient (loop all appends + removes) --> done
+    # a. use list comprehensions! --> done
+# 4. for multiplayer, make for loop that adds empty lists to master list and work on indices --> mp logic would be
+# overkill for a project of this nature, but I added mp functionality to most functions
+# 5. in order for mp to work, need to loop player names --> as previously stated, mp logic would need to include
+# double/triple/etc milhamot, so probably not realistic to pursue at this point in time
 
 import random
+
 
 class Players:
 
@@ -26,8 +27,7 @@ class Players:
         self.cards = cards
         self.card_values = card_values
 
-
-    def update_cards_and_values(self, cards, card_values, add_cards):  # todo check if correct (emph on .remove)
+    def update_cards_and_values(self, cards, card_values, add_cards):
         # inputs are lists to either append or remove
         if add_cards:
             self.cards.extend(cards)
@@ -54,27 +54,24 @@ values = {'🂡': 14, '🂢': 2, '🂣': 3, '🂤': 4, '🂥': 5, '🂦': 6, '�
           '🃑': 14, '🃒': 2, '🃓': 3, '🃔': 4, '🃕': 5, '🃖': 6, '🃗': 7, '🃘': 8, '🃙': 9, '🃚': 10, '🃛': 11, '🃝': 12, '🃞': 13}
 
 
-
-
 def main():
     game_over = False
     tie = False
-    round_counter = 1
+    round_counter = 0
     print("hey") #todo instructions
     how_many_players, list_of_players = init_players()
     cards_per_hand, all_players_hand, hand_values = init_cards(how_many_players)
     player, player_value = init_shuffle(how_many_players, cards_per_hand, all_players_hand, hand_values)
     assign_cards(list_of_players, player, player_value)
     while not game_over:
+        round_counter += 1
         game_over, loser_final = round(list_of_players, round_counter, game_over)
     print(f'\n\n{list_of_players[1-loser_final].name} beat {list_of_players[loser_final].name} --> '
           f'⚔{list_of_players[1-loser_final].points}⚔ to ⚔{list_of_players[loser_final].points}⚔!')
     print(f'This took {list_of_players[1-loser_final].name} {round_counter} rounds!')
-    # mil_ha_ma_counter = 0
 
 
-
-def init_players(): # determines number of players + creates their instances
+def init_players():  # determines number of players + creates their instances
     try:
         how_many_players = int(input("How many players will be playing today?\n"))
     except:
@@ -89,7 +86,7 @@ def init_players(): # determines number of players + creates their instances
         list_of_players = []
         player_1 = Players(input("What is Player 1's name? \n"), [], [], 0)
         list_of_players.append(player_1)
-        player_2 = Players(input("What is Player 2's name? \n"), [], [], 2)
+        player_2 = Players(input("What is Player 2's name? \n"), [], [], 0)
         list_of_players.append(player_2)
     return how_many_players, list_of_players
 
@@ -142,14 +139,14 @@ def redistribution(winner, loser, num_of_redistributions):
     Players.update_cards_and_values(loser, loser_cards, loser_values, False)
     Players.update_cards_and_values(winner, to_remove_cards_w, to_remove_values_w, False)
     Players.update_cards_and_values(winner, winner_cards, winner_values, True)
-    winner.points += num_of_redistributions  # todo unclear if this works...
+    winner.points += num_of_redistributions
 
 
 def round(list_of_players, round_counter, game_over):
     for i in range(len(list_of_players)):
         if len(list_of_players[i].cards) == 0:
-            return True, i  # todo alternatively, need to return game = false
-    print(f'Round {round_counter}')
+            return True, i
+    print(f'\nRound {round_counter}\n')
     card_battle = []
     for j in range(len(list_of_players)):
         print(f'{list_of_players[j].name} has: {list_of_players[j].cards[0]}')
@@ -157,17 +154,16 @@ def round(list_of_players, round_counter, game_over):
         print(f'{list_of_players[j].card_values}')
         card_battle.append(list_of_players[j].card_values[0])
     round_winner, num_of_milhama, less_hidden_cards = compare_cards(list_of_players, card_battle, 0, 0)
-    if round_winner == None:
+    if round_winner is None:
         print("That was crazy!")
         print("Let's continue...")
     else:
-        redistribution(list_of_players[round_winner], list_of_players[1-round_winner], 1 + 3*num_of_milhama)
+        redistribution(list_of_players[round_winner], list_of_players[1-round_winner], 1 + (3*num_of_milhama))
         # todo check if less_hidden_cards matters here (necessary or already taken care of)
-        round_counter += 1
+        print(f'The score is: {list_of_players[0].name}: {list_of_players[0].points} points and '
+              f'{list_of_players[1].name}: {list_of_players[1].points} points')
+        # round_counter += 1
     return False, 0
-
-
-
 
 
 def compare_cards(list_of_players, card_battle, num_of_milhamot, less_hidden_cards):
@@ -184,11 +180,11 @@ def mil_ha_ma(list_of_players, card_battle, num_of_milhamot, less_hidden_cards):
     problematic_player = 0
     cards_to_hide = 3*num_of_milhamot
     for i in range(len(list_of_players)):
-        if len(list_of_players[i].cards) < 3*num_of_milhamot:
+        if len(list_of_players[i].cards)-1 < 3*num_of_milhamot:
             cards_to_hide = len(list_of_players[i].cards) % 3 + 3*(num_of_milhamot-1)
             problematic_player = i
     if cards_to_hide == 3*num_of_milhamot:
-        print("Mil")
+        print("\nMil")
         print(''.join(str((list_of_players[j].name + ":" + list_of_players[j].cards[cards_to_hide-2] + " ")) for j in
                       range(len(list_of_players))))
         print("Ha")
@@ -198,14 +194,14 @@ def mil_ha_ma(list_of_players, card_battle, num_of_milhamot, less_hidden_cards):
         print(''.join(str((list_of_players[j].name + " has " + list_of_players[j].cards[cards_to_hide] + "\n")) for j in
                       range(len(list_of_players))))
         next_card_battle = [list_of_players[k].card_values[cards_to_hide] for k in range(len(list_of_players))]
-        return compare_cards(list_of_players, next_card_battle, num_of_milhamot + 1)
+        return compare_cards(list_of_players, next_card_battle, num_of_milhamot, less_hidden_cards)
     else:
         less_hidden_cards = cards_to_hide % 3 # number of cards left to open in total
         if less_hidden_cards == 0:
             return tie_on_last_card(list_of_players, num_of_milhamot, problematic_player)
         print(f"{list_of_players[problematic_player].name} doesn't have enough cards to complete the Milhama!")
         print("This means that this is potentially the final round of the match!")
-        print("Mil")
+        print("\nMil")
         print("Ha")
         print("MA!")
         for l in range(less_hidden_cards-1):
@@ -220,6 +216,7 @@ def mil_ha_ma(list_of_players, card_battle, num_of_milhamot, less_hidden_cards):
             return tie_on_last_card(list_of_players, num_of_milhamot, problematic_player)
         return compare_cards(list_of_players, card_battle_pl, num_of_milhamot, less_hidden_cards)
 
+
 def tie_on_last_card(list_of_players, num_of_milhamot, problematic_player):
     print(f'The result of this round is a tie, and {list_of_players[problematic_player].name} has no more'
           f' cards left!')
@@ -232,7 +229,6 @@ def tie_on_last_card(list_of_players, num_of_milhamot, problematic_player):
         Players.update_cards_and_values(list_of_players[i], list_of_players[i].cards[0:cards_to_return],
                                         list_of_players[i].card_values[0:cards_to_return], False)
     return None, None, 0
-
 
 
 main()
