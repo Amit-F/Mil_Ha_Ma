@@ -1,12 +1,8 @@
-# to-do:
-# 1. fix "1 points" bug --> fix could potentially add hundreds of loops per game... worth it?
-# 2. find a way to make the game end when 1 player reaches 0 cards --> done
-# 3. make code more efficient (loop all appends + removes) --> done
-    # a. use list comprehensions! --> done
-# 4. for multiplayer, make for loop that adds empty lists to master list and work on indices --> mp logic would be
-# overkill for a project of this nature, but I added mp functionality to most functions
-# 5. in order for mp to work, need to loop player names --> as previously stated, mp logic would need to include
-# double/triple/etc milhamot, so probably not realistic to pursue at this point in time
+# Welcome to my simulation of the age-old classic card game: Mil-Ha-Ma (war)!
+# In order to get started, all you have to do is hit run!
+# At the end of the file you can find specific comments regarding house rules I used in this simulation.
+# Enjoy!
+
 
 import random
 
@@ -27,21 +23,17 @@ class Players:
         self.cards = cards
         self.card_values = card_values
 
-    def update_cards_and_values(self, cards, card_values, add_cards):
-        # inputs are lists to either append or remove
+    def update_cards_and_values(self, cards, card_values, add_cards): # inputs are lists to either append or remove
         if add_cards:
             self.cards.extend(cards)
             self.card_values.extend(card_values)
-            #  for i in range(len(cards)):
-            #      self.cards.append(cards[i])
-            #      self.card_values.append(card_values[i])
         else:
             for i in range(len(cards)):
                 self.cards.remove(cards[i])
                 self.card_values.remove(card_values[i])
 
 
-cards = {'As': '🂡', '2s': '🂢', '3s': '🂣', '4s': '🂤', '5s': '🂥', '6s': '🂦', '7s': '🂧', '8s': '🂨', '9s': '🂩', '10s': '🂪',
+undistr_cards = {'As': '🂡', '2s': '🂢', '3s': '🂣', '4s': '🂤', '5s': '🂥', '6s': '🂦', '7s': '🂧', '8s': '🂨', '9s': '🂩', '10s': '🂪',
          'Js': '🂫', 'Qs': '🂭', 'Ks': '🂮', 'Ah': '🂱', '2h': '🂲', '3h': '🂳', '4h': '🂴', '5h': '🂵', '6h': '🂶', '7h': '🂷',
          '8h': '🂸', '9h': '🂹', '10h': '🂺', 'Jh': '🂻', 'Qh': '🂽', 'Kh': '🂾', 'Ad': '🃁', '2d': '🃂', '3d': '🃃', '4d': '🃄',
          '5d': '🃅', '6d': '🃆', '7d': '🃇', '8d': '🃈', '9d': '🃉', '10d': '🃊', 'Jd': '🃋', 'Qd': '🃍', 'Kd': '🃎', 'Ac': '🃑',
@@ -58,17 +50,20 @@ def main():
     game_over = False
     tie = False
     round_counter = 0
-    print("hey") #todo instructions
+    print("Welcome to my simulation of the age-old classic card game: Mil-Ha-Ma (war)!\n")
     how_many_players, list_of_players = init_players()
     cards_per_hand, all_players_hand, hand_values = init_cards(how_many_players)
     player, player_value = init_shuffle(how_many_players, cards_per_hand, all_players_hand, hand_values)
     assign_cards(list_of_players, player, player_value)
     while not game_over:
         round_counter += 1
-        game_over, loser_final = round(list_of_players, round_counter, game_over)
+        game_over, loser_final = next_round(list_of_players, round_counter)
+        if round_counter > 5000:
+            print("There hasn't been a winner after 5000 rounds! Let's just call it a tie :)")
+            return 0
     print(f'\n\n{list_of_players[1-loser_final].name} beat {list_of_players[loser_final].name} --> '
           f'⚔{list_of_players[1-loser_final].points}⚔ to ⚔{list_of_players[loser_final].points}⚔!')
-    print(f'This took {list_of_players[1-loser_final].name} {round_counter} rounds!')
+    print(f'This took {list_of_players[1-loser_final].name} {round_counter-1} rounds!')
 
 
 def init_players():  # determines number of players + creates their instances
@@ -80,7 +75,7 @@ def init_players():  # determines number of players + creates their instances
     if how_many_players != 2:
         print("Currently only a 2 player game is supported...")
         print("Later versions could include more!")
-        print("In the meantime, please enter 2")
+        print("In the meantime, please enter 2.")
         return init_players()
     else:
         list_of_players = []
@@ -96,11 +91,11 @@ def init_cards(how_many_players):
     all_players_hand = []
     hand_values = []
     for i in range(52):
-        random_key = random.choice(list(cards.keys()))
-        random_value = cards[random_key]
+        random_key = random.choice(list(undistr_cards.keys()))
+        random_value = undistr_cards[random_key]
         all_players_hand.append(random_value)
         hand_values.append(values[random_value])
-        del cards[random_key]
+        del undistr_cards[random_key]
     return cards_per_hand, all_players_hand, hand_values
 
 
@@ -142,7 +137,7 @@ def redistribution(winner, loser, num_of_redistributions):
     winner.points += num_of_redistributions
 
 
-def round(list_of_players, round_counter, game_over):
+def next_round(list_of_players, round_counter):
     for i in range(len(list_of_players)):
         if len(list_of_players[i].cards) == 0:
             return True, i
@@ -158,11 +153,13 @@ def round(list_of_players, round_counter, game_over):
         print("That was crazy!")
         print("Let's continue...")
     else:
-        redistribution(list_of_players[round_winner], list_of_players[1-round_winner], 1 + (3*num_of_milhama))
-        # todo check if less_hidden_cards matters here (necessary or already taken care of)
+        if less_hidden_cards == 0: # no mil-ha-ma or regular successful mil-ha-ma
+            redistribution(list_of_players[round_winner], list_of_players[1 - round_winner], (1 + (3 * num_of_milhama)))
+        else:
+            redistribution(list_of_players[round_winner], list_of_players[1-round_winner],
+                           (1 + (3*num_of_milhama)-(3-less_hidden_cards)))
         print(f'The score is: {list_of_players[0].name}: {list_of_players[0].points} points and '
               f'{list_of_players[1].name}: {list_of_players[1].points} points')
-        # round_counter += 1
     return False, 0
 
 
@@ -173,51 +170,55 @@ def compare_cards(list_of_players, card_battle, num_of_milhamot, less_hidden_car
     elif card_battle[0] < card_battle[1]:
         print(f'{list_of_players[1].name} wins!')
         return 1, num_of_milhamot, less_hidden_cards
-    return mil_ha_ma(list_of_players, card_battle, num_of_milhamot+1, less_hidden_cards)
+    return mil_ha_ma(list_of_players, num_of_milhamot+1, less_hidden_cards)
 
 
-def mil_ha_ma(list_of_players, card_battle, num_of_milhamot, less_hidden_cards):
+def mil_ha_ma(list_of_players, num_of_milhamot, less_hidden_cards):
+    if num_of_milhamot > 1:
+        print("Again!")
     problematic_player = 0
     cards_to_hide = 3*num_of_milhamot
     for i in range(len(list_of_players)):
         if len(list_of_players[i].cards)-1 < 3*num_of_milhamot:
-            cards_to_hide = len(list_of_players[i].cards) % 3 + 3*(num_of_milhamot-1)
+            cards_to_hide = len(list_of_players[i].cards)
             problematic_player = i
-    if cards_to_hide == 3*num_of_milhamot:
-        print("\nMil")
-        print(''.join(str((list_of_players[j].name + ":" + list_of_players[j].cards[cards_to_hide-2] + " ")) for j in
-                      range(len(list_of_players))))
-        print("Ha")
-        print(''.join(str((list_of_players[j].name + ":" + list_of_players[j].cards[cards_to_hide - 1] + " ")) for j in
-                      range(len(list_of_players))))
-        print("MA!")
-        print(''.join(str((list_of_players[j].name + " has " + list_of_players[j].cards[cards_to_hide] + "\n")) for j in
-                      range(len(list_of_players))))
-        next_card_battle = [list_of_players[k].card_values[cards_to_hide] for k in range(len(list_of_players))]
-        return compare_cards(list_of_players, next_card_battle, num_of_milhamot, less_hidden_cards)
-    else:
-        less_hidden_cards = cards_to_hide % 3 # number of cards left to open in total
-        if less_hidden_cards == 0:
-            return tie_on_last_card(list_of_players, num_of_milhamot, problematic_player)
-        print(f"{list_of_players[problematic_player].name} doesn't have enough cards to complete the Milhama!")
-        print("This means that this is potentially the final round of the match!")
-        print("\nMil")
-        print("Ha")
-        print("MA!")
-        for l in range(less_hidden_cards-1):
-            print(''.join(
-                str("("+(list_of_players[j].name + ":" + list_of_players[j].cards[cards_to_hide + l] + ") ")) for j in
-                range(len(list_of_players))))
-        card_battle_pl = []
-        for m in range(len(list_of_players)):
-            print(f'{list_of_players[m].name} has: {list_of_players[m].cards[less_hidden_cards-1]}')
-            card_battle_pl.append(list_of_players[m].card_values[less_hidden_cards-1])
-        if card_battle_pl[0] == card_battle_pl[1]:
-            return tie_on_last_card(list_of_players, num_of_milhamot, problematic_player)
-        return compare_cards(list_of_players, card_battle_pl, num_of_milhamot, less_hidden_cards)
+    if cards_to_hide == 3*num_of_milhamot: # full Mil-Ha-Ma
+        if len(list_of_players[problematic_player].cards) > 3*num_of_milhamot:
+            print("\nMil")
+            print(''.join(str((list_of_players[j].name + ":" + list_of_players[j].cards[cards_to_hide-2] + " ")) for j in
+                          range(len(list_of_players))))
+            print("Ha")
+            print(''.join(str((list_of_players[j].name + ":" + list_of_players[j].cards[cards_to_hide - 1] + " ")) for j in
+                          range(len(list_of_players))))
+            print("MA!")
+            print(''.join(str((list_of_players[j].name + " has " + list_of_players[j].cards[cards_to_hide] + "\n")) for j in
+                          range(len(list_of_players))))
+            next_card_battle = [list_of_players[k].card_values[cards_to_hide] for k in range(len(list_of_players))]
+            return compare_cards(list_of_players, next_card_battle, num_of_milhamot, less_hidden_cards)
+    # not enough cards for full Mil-Ha-Ma...
+    less_hidden_cards = (cards_to_hide-1) % 3 # number of cards left to open in total
+    if less_hidden_cards == 0:
+        if len(list_of_players[problematic_player].cards)-1 == 3*(num_of_milhamot-1):
+            return tie_on_last_card(list_of_players, problematic_player)
+    print(f"{list_of_players[problematic_player].name} doesn't have enough cards to complete the Milhama!")
+    print("This means that this is potentially the final round of the match!")
+    print("\nMil")
+    print("Ha")
+    print("MA!")
+    for l in range(less_hidden_cards-1):
+        print(''.join(
+            str("("+(list_of_players[j].name + ":" + list_of_players[j].cards[cards_to_hide-2] + ") ")) for j in
+            range(len(list_of_players))))
+    card_battle_pl = []
+    for m in range(len(list_of_players)):
+        print(f'{list_of_players[m].name} has: {list_of_players[m].cards[cards_to_hide-1]}')
+        card_battle_pl.append(list_of_players[m].card_values[cards_to_hide-1])
+    if card_battle_pl[0] == card_battle_pl[1]:
+        return tie_on_last_card(list_of_players, problematic_player)
+    return compare_cards(list_of_players, card_battle_pl, num_of_milhamot, less_hidden_cards)
 
 
-def tie_on_last_card(list_of_players, num_of_milhamot, problematic_player):
+def tie_on_last_card(list_of_players, problematic_player):
     print(f'The result of this round is a tie, and {list_of_players[problematic_player].name} has no more'
           f' cards left!')
     print("Therefore, we will continue the game by returning the cards in question back to their"
@@ -232,3 +233,20 @@ def tie_on_last_card(list_of_players, num_of_milhamot, problematic_player):
 
 
 main()
+
+
+# House Rules:
+#   1) In this version, all cards won are immediately placed in order at the bottom of the winner's deck.
+#   2) In case of a Mil-Ha-Ma, two cards are placed face-down while the next card is the one
+#       that decides the victor (and so on).
+#   3) In case a player does not have enough cards to complete a Mil-Ha-Ma (has either 0 or 1 card available
+#       to place face-down before the showdown), the last remaining card in the player's deck will decide who
+#       the victor is, and both players lay down the same amount of face-down cards.
+#   4) In case of a Mil-Ha-Ma that occurs on a player's last card, all cards relevant from the beginning
+#       of that round are returned unshuffled to the bottom of the deck they came from, and the game continues.
+#   5) Points == number of cards taken from opponent, such that at the end of the game there will always be
+#       a difference of 26 points between the winner and the loser.
+
+# Additional Comments:
+#   1) Each player's deck and corresponding card values are printed during each round for your convenience.
+#       In order to hide these, you are welcome to comment out lines 148 and 149.
